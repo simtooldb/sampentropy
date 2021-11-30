@@ -1,0 +1,79 @@
+// $Id: mosinit.hoc,v 1.4 2011/03/16 19:37:28 samn Exp $ 
+
+install_vecst() // make sure utility,misc Vector functions available
+install_sampen() // make sure vsampen Vector function available
+
+objref vx,vy,g,rdm,vs,vn
+strdef str
+g=new Graph()
+vx=new Vector()
+vx.indgen(0,50*2*PI,0.1)
+vy=new Vector()
+rdm=new Random()
+vs=new Vector()
+vn=new Vector()
+noise = 0
+double sz[4]
+
+//* setwave - sets up waveform in vy
+proc setwave () { local i,j,n localobj vr
+  n=$1
+  vy.copy(vx)
+  vy.apply("sin")
+  vr=new Vector(vy.size)
+  rdm.uniform(-n,n)
+  vr.setrand(rdm)
+  vy.add(vr)
+}
+
+//* plotwave - plots waveform in vy using current noise level
+proc plotwave () { 
+  g.erase_all()
+  setwave(noise)
+  sprint(str,"noise=%g,SampEn=%g",noise,vy.vsampen())
+  vy.plot(g,vx)
+  g.exec_menu("View = plot")
+  g.size(&sz)
+  g.size(0,3*2*PI,sz[2],sz[3])
+  g.exec_menu("New Axis")
+  g.label(0.45,0.94,str)
+}
+
+//* plotsvn - calculates/plots SampEn vs noise level
+proc plotsvn () { local i
+  vs.resize(0)
+  vn.indgen(0,2.5,0.1)
+  for i=0,vn.size-1 {
+    setwave(vn.x(i))
+    vs.append(vy.vsampen())
+  }
+  g.erase_all
+  vs.plot(g,vn,1,4)
+  vs.mark(g,vn,"O",15,1,1)
+  g.exec_menu("View = plot")
+  g.exec_menu("New Axis")
+  g.label(0.77,0.025,"noise level")
+  g.label(0.,0.9,"SampEn")
+}
+
+proc readmeg () {
+  xpanel("help")
+  xlabel("NEURON demo of Sample Entropy (SampEn)")
+  xlabel("plot SampEn vs noise - applies different levels of noise to sin wave and calculates SampEn - plots results")
+  xlabel("plot waveform with noise level - plots sin wave using specified noise level")
+  xlabel("noise - specify noise level for plot waveform with noise level button")
+  xpanel()
+}
+
+//* dempan - GUI
+proc dempan () {
+  xpanel("NEURON demo of Sample Entropy (SampEn)")
+  xbutton("plot SampEn vs noise","plotsvn()")
+  xbutton("plot waveform with noise level","plotwave()")
+  xvalue("noise","noise",1)
+  xbutton("readme/help","readmeg()")
+  xbutton("quit","quit()")
+  xpanel()
+}
+
+dempan() // start GUI
